@@ -1072,7 +1072,7 @@ let bgmSchedulerId = null;
 let bgmCurrentTrack = 'farm';
 let bgmMasterGain = null;
 let bgmAudioPlaying = false;
-let bgmAudioSource = null;
+const BGM_FARM_VOLUME = 0.22;
 function getBgmMasterGain(){
   const ctx = getAudioCtx();
   if(!ctx) return null;
@@ -1084,16 +1084,23 @@ function getBgmMasterGain(){
   return bgmMasterGain;
 }
 function getBgmAudioEl(){ return document.getElementById('bgm-audio-farm'); }
-function connectBgmAudioToGraph(){
-  if(bgmAudioSource) return;
-  const ctx = getAudioCtx();
-  const master = getBgmMasterGain();
-  const el = getBgmAudioEl();
-  if(!ctx || !master || !el) return;
-  try{
-    bgmAudioSource = ctx.createMediaElementSource(el);
-    bgmAudioSource.connect(master);
-  }catch(e){}
+// 오디오 파일은 Web Audio 그래프에 태우지 않고 <audio> 태그로 직접 재생 (AudioContext가 살아있지 않아도 소리가 나도록 - iOS 사파리 등 대응)
+let bgmFadeTimer = null;
+function fadeBgmAudioVolume(el, from, to, duration, onDone){
+  if(bgmFadeTimer){ clearInterval(bgmFadeTimer); bgmFadeTimer = null; }
+  const steps = 20;
+  const stepTime = (duration*1000)/steps;
+  let i = 0;
+  el.volume = from;
+  bgmFadeTimer = setInterval(() => {
+    i++;
+    el.volume = Math.max(0, Math.min(1, from + (to-from)*(i/steps)));
+    if(i>=steps){
+      clearInterval(bgmFadeTimer); bgmFadeTimer = null;
+      el.volume = to;
+      if(onDone) onDone();
+    }
+  }, stepTime);
 }
 function playBgmTone(freq, startTime, duration, type, vol){
   const ctx = getAudioCtx();
@@ -1114,18 +1121,17 @@ function playBgmTone(freq, startTime, duration, type, vol){
 }
 function startBGM(){
   if(!S.bgmOn || bgmSchedulerId || bgmAudioPlaying) return;
-  const ctx = getAudioCtx();
-  if(!ctx) return;
   if(bgmCurrentTrack === 'farm'){
-    connectBgmAudioToGraph();
     const el = getBgmAudioEl();
     if(el){
-      el.volume = 0.4;
+      el.volume = BGM_FARM_VOLUME;
       bgmAudioPlaying = true;
       el.play().catch(()=>{ bgmAudioPlaying = false; });
     }
     return;
   }
+  const ctx = getAudioCtx();
+  if(!ctx) return;
   const track = BGM_TRACKS[bgmCurrentTrack] || BGM_TRACKS.farm;
   let melIdx = 0, bassIdx = 0;
   let nextMelTime = ctx.currentTime + 0.1;
@@ -1151,6 +1157,7 @@ function startBGM(){
   }, 200);
 }
 function stopBGM(){
+  if(bgmFadeTimer){ clearInterval(bgmFadeTimer); bgmFadeTimer = null; }
   if(bgmSchedulerId){ clearInterval(bgmSchedulerId); bgmSchedulerId = null; }
   if(bgmAudioPlaying){ const el = getBgmAudioEl(); if(el) el.pause(); bgmAudioPlaying = false; }
 }
@@ -1166,24 +1173,39 @@ function restartBGM(name){
 function setBgmTrack(name){
   if(!BGM_TRACKS[name] || bgmCurrentTrack === name) return;
   if(!bgmSchedulerId && !bgmAudioPlaying){ bgmCurrentTrack = name; return; }
-  const ctx = getAudioCtx();
-  const gain = getBgmMasterGain();
   const FADE = 0.25;
-  if(ctx && gain){
-    gain.gain.cancelScheduledValues(ctx.currentTime);
-    gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + FADE);
+  const wasFarm = bgmCurrentTrack === 'farm';
+  const toFarm = name === 'farm';
+  const el = getBgmAudioEl();
+
+  if(wasFarm && el){
+    fadeBgmAudioVolume(el, el.volume, 0, FADE, () => { el.pause(); bgmAudioPlaying = false; });
+  } else {
+    const ctx = getAudioCtx();
+    const gain = getBgmMasterGain();
+    if(ctx && gain){
+      gain.gain.cancelScheduledValues(ctx.currentTime);
+      gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + FADE);
+    }
   }
+
   setTimeout(() => {
-    stopBGM();
+    if(bgmSchedulerId){ clearInterval(bgmSchedulerId); bgmSchedulerId = null; }
     bgmCurrentTrack = name;
-    startBGM();
-    const c2 = getAudioCtx();
-    const g2 = getBgmMasterGain();
-    if(c2 && g2){
-      g2.gain.cancelScheduledValues(c2.currentTime);
-      g2.gain.setValueAtTime(0.0001, c2.currentTime);
-      g2.gain.linearRampToValueAtTime(1, c2.currentTime + FADE);
+    if(toFarm && el){
+      bgmAudioPlaying = true;
+      el.play().catch(()=>{ bgmAudioPlaying = false; });
+      fadeBgmAudioVolume(el, 0, BGM_FARM_VOLUME, FADE);
+    } else {
+      startBGM();
+      const c2 = getAudioCtx();
+      const g2 = getBgmMasterGain();
+      if(c2 && g2){
+        g2.gain.cancelScheduledValues(c2.currentTime);
+        g2.gain.setValueAtTime(0.0001, c2.currentTime);
+        g2.gain.linearRampToValueAtTime(1, c2.currentTime + FADE);
+      }
     }
   }, FADE * 1000 + 20);
 }
@@ -3109,14 +3131,15 @@ function openInfoPopup(b) {
       const btn = document.createElement('button');
       btn.className = 'gs-btn';
       btn.style.width = '100%'; btn.style.borderColor = '#fbbf24';
-      btn.innerHTML = '🍒 열매 모두 수확하기 (열매 +'+cnt+')';
+      btn.innerHTML = '🍒 열매 모두 수확하기 (열매 +'+(cnt*prodMult())+')';
       btn.onclick = () => {
         sndPickup();
-        S.fruit += b.fruitCount;
-        S.harvests = (S.harvests||0) + b.fruitCount;
-        S.manualHarvests = (S.manualHarvests||0) + b.fruitCount;
-        S.fruitHarvests = (S.fruitHarvests||0) + b.fruitCount;
-        toast('🍒 열매 '+b.fruitCount+'개 획득!','success');
+        const gained = b.fruitCount * prodMult();
+        S.fruit += gained;
+        S.harvests = (S.harvests||0) + gained;
+        S.manualHarvests = (S.manualHarvests||0) + gained;
+        S.fruitHarvests = (S.fruitHarvests||0) + gained;
+        toast('🍒 열매 '+gained+'개 획득!','success');
         b.fruitCount = 0;
         b.fruitStart = Date.now();
         saveState(); updateUI(); renderBuildings();
@@ -3180,7 +3203,7 @@ function openInfoPopup(b) {
       statusEl.innerHTML = '<span style="color:#7BA876;">작물이 다 자랐습니다!</span>' + (b.fertilized ? ' <span style="color:#a855f7;">(비료 적용됨)</span>' : '');
       const btn = document.createElement('button');
       btn.className = 'gs-btn'; btn.style.width = '100%'; btn.style.borderColor = '#eab308';
-      const yieldAmt = b.fertilized ? 3 : 1;
+      const yieldAmt = (b.fertilized ? 3 : 1) * prodMult();
       btn.innerHTML = `🌾 수확하기 (농산물 +${yieldAmt})`;
       btn.onclick = () => {
         sndPickup();
@@ -4201,12 +4224,12 @@ function harvestAll() {
     if(!item) return;
     
     if(item.type === 'tree' && b.fruitCount > 0) {
-      harvestedFruits += b.fruitCount;
+      harvestedFruits += b.fruitCount * prodMult();
       b.fruitCount = 0;
       b.fruitStart = Date.now();
     }
     else if(item.type === 'farm' && b.ready) {
-      const yieldAmt = b.fertilized ? 3 : 1;
+      const yieldAmt = (b.fertilized ? 3 : 1) * prodMult();
       harvestedCrops += yieldAmt;
       farmHarvestsCount++;
       b.ready = false;
@@ -4468,11 +4491,12 @@ function tickTree(b, item) {
   setHarvestIcon(div, '🍒', b.fruitCount, (e)=>{
     e.preventDefault(); e.stopPropagation();
     sndPickup();
-    S.fruit += b.fruitCount;
-    S.harvests = (S.harvests||0) + b.fruitCount;
-    S.manualHarvests = (S.manualHarvests||0) + b.fruitCount;
-    S.fruitHarvests = (S.fruitHarvests||0) + b.fruitCount;
-    toast('🍒 열매 '+b.fruitCount+'개 획득!','success');
+    const gained = b.fruitCount * prodMult();
+    S.fruit += gained;
+    S.harvests = (S.harvests||0) + gained;
+    S.manualHarvests = (S.manualHarvests||0) + gained;
+    S.fruitHarvests = (S.fruitHarvests||0) + gained;
+    toast('🍒 열매 '+gained+'개 획득!','success');
     b.fruitCount=0; b.fruitStart = Date.now();
     saveState(); tickTree(b, item); updateUI();
     if(typeof checkQuest==='function') checkQuest();
@@ -4495,7 +4519,7 @@ function tickFarm(b, item) {
   }
   setHarvestIcon(div, '🌾', b.ready?1:0, (e)=>{
     e.preventDefault(); e.stopPropagation(); sndPickup(); b.ready=false;
-    const yieldAmt = b.fertilized ? 3 : 1;
+    const yieldAmt = (b.fertilized ? 3 : 1) * prodMult();
     S.crop += yieldAmt; b.fertilized = false;
     S.harvests=(S.harvests||0)+1; S.manualHarvests=(S.manualHarvests||0)+1;
     toast(`🌾 농산물 ${yieldAmt}개 수확! (다시 씨앗을 심으세요)`,'success');
