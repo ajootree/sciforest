@@ -1,0 +1,8 @@
+{
+  "name": "sciforest",
+  "compatibility_date": "2026-07-10",
+  "assets": {
+    "directory": "./web_deploy",
+    "not_found_handling": "single-page-application"
+  }
+}
