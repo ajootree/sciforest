@@ -769,11 +769,12 @@ body.capture-mode #capture-shutter-btn { display:flex; }
     <h2 id="shop-modal-title" style="margin-bottom:20px; font-size:1.8rem;">거래</h2>
     <div style="font-size:3rem; margin-bottom:10px;" id="shop-modal-icon"></div>
     <div style="font-size:1.2rem; color:var(--modal-muted); margin-bottom:20px;" id="shop-modal-desc"></div>
-    <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-bottom:20px;">
+    <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-bottom:12px;">
       <button class="gs-btn" style="width:50px; font-size:1.5rem; padding:5px;" onclick="changeShopAmt(-1)">-</button>
       <div id="shop-modal-amt" style="font-size:2rem; font-weight:bold; min-width:50px;">1</div>
       <button class="gs-btn" style="width:50px; font-size:1.5rem; padding:5px;" onclick="changeShopAmt(1)">+</button>
     </div>
+    <input type="range" id="shop-modal-slider" min="1" max="99" value="1" style="width:100%;margin-bottom:20px;accent-color:var(--primary);" oninput="setShopAmt(this.value)">
     <div id="shop-modal-total" style="font-size:1.5rem; font-weight:bold; color:var(--gold); margin-bottom:25px;">총: 0G</div>
     <div style="display:flex; gap:10px;">
       <button id="btn-shop-confirm" class="gs-btn" style="flex:1; background:rgba(123,168,118,0.4); border-color:#7BA876;" onclick="confirmShop()">확인</button>
@@ -2954,6 +2955,11 @@ function changeShopAmt(delta) {
   updateShopModal();
 }
 
+function setShopAmt(val) {
+  shopState.amt = Math.max(1, parseInt(val) || 1);
+  updateShopModal();
+}
+
 function updateShopModal() {
   const isBuy = shopState.mode === 'buy';
   document.getElementById('shop-modal-title').textContent = isBuy ? '🛒 자원 구매' : '💰 자원 판매';
@@ -2961,6 +2967,9 @@ function updateShopModal() {
   document.getElementById('shop-modal-amt').textContent = shopState.amt;
   const totalPrice = shopState.amt * (isBuy ? shopState.item.cost : shopState.item.sell);
   document.getElementById('shop-modal-total').textContent = `총: ${totalPrice}G`;
+
+  const sliderEl = document.getElementById('shop-modal-slider');
+  if(sliderEl) sliderEl.value = shopState.amt;
 
   const owned = S[shopState.item.res] || 0;
   const enough = isBuy ? (S.gold||0) >= totalPrice : owned >= shopState.amt;
@@ -3974,15 +3983,19 @@ function checkChalQuiz(){
 }
 // 가공 대기 중 문제 풀기: 잡초 OX 퀴즈가 아니라 탐험모드의 구역 퀴즈로 연계
 function showCraftWaitQuiz(){
+  closeCraftPopup();
   const b = currentCraftBuilding;
   const r = b && CRAFT_RECIPES[b.id];
   const zoneKey = r && Object.keys(r.inCost).find(k => RES_ZONE[k]);
   const zone = zoneKey ? RES_ZONE[zoneKey] : 1;
   openQuiz(zone);
 }
-// 농지 재배 대기 중 문제 풀기: 특정 단원과 연결되지 않으므로 구역을 무작위로 선택
+// 농지 재배 대기 중 문제 풀기: 특정 단원과 연결되지 않으므로 구역 순서를 셔플백으로 순환 (한 바퀴 돌기 전엔 같은 구역 반복 안 함)
+const farmWaitZoneBag = createShuffleBag([1,2,3,4]);
 function showFarmWaitQuiz(){
-  openQuiz(1 + Math.floor(Math.random()*4));
+  document.getElementById('info-popup').style.display = 'none';
+  if(infoPopupTimerInterval){ clearInterval(infoPopupTimerInterval); infoPopupTimerInterval = null; }
+  openQuiz(farmWaitZoneBag.next());
 }
 // Surprise Quiz System
 function showSurpriseQuiz(){
@@ -4670,13 +4683,15 @@ function tickFarm(b, item) {
     const pct = Math.min(100, ((Date.now()-b.plantTime)/90000)*100);
     if (pct >= 100) {
       b.growing = false; b.ready = true;
-      refreshBuildingIcon(b, item);
       setProgressBar(div, null);
     } else {
       setProgressBar(div, pct, '#7BA876');
       setTimeout(() => tickFarm(b, item), 1000);
     }
+  } else {
+    setProgressBar(div, null);
   }
+  refreshBuildingIcon(b, item);
   setHarvestIcon(div, '🌾', b.ready?1:0, false);
 }
 
@@ -4808,7 +4823,6 @@ function renderBuildings(){
           openInfoPopup(b);
         };
         div.onclick = clickHandler;
-        div.onmousedown = clickHandler;
         div.ontouchend = (e) => { if(!hasPanned){ clickHandler(e); } };
       }
       else if(item.type.startsWith('craft') || item.type.startsWith('power_')){
@@ -4821,7 +4835,6 @@ function renderBuildings(){
           openCraftPopup(b);
         };
         div.onclick = clickHandler;
-        div.onmousedown = clickHandler;
         div.ontouchend = (e) => { if(!hasPanned){ clickHandler(e); } };
       }
       else if(item.type==='farmer_house'){
