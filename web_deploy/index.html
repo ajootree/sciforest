@@ -42,7 +42,7 @@ body{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidd
 @media (min-width: 768px) {
   #topbar { position: absolute; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh; padding: calc(20px + env(safe-area-inset-top)) env(safe-area-inset-right) calc(20px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left)); box-sizing: border-box; display: flex; flex-direction: column; gap: 15px; align-items: flex-start; background: transparent; border: none; box-shadow: none; pointer-events: none; }
   
-  .top-header { position: relative; top: auto; left: auto; width: 280px; padding: 15px; background: rgba(45,35,25,0.92); flex-direction: column; align-items: flex-start; pointer-events: auto; overflow: visible; border: 2px solid var(--border); border-radius: 16px; backdrop-filter: blur(10px); box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
+  .top-header { position: relative; top: auto; left: auto; width: 240px; padding: 15px; background: rgba(45,35,25,0.92); flex-direction: column; align-items: flex-start; pointer-events: auto; overflow: visible; border: 2px solid var(--border); border-radius: 16px; backdrop-filter: blur(10px); box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
   .top-header::before { display: none; }
   
   .top-header h1 { font-size: 1.3rem; margin-bottom: 15px; text-shadow: none; width: 100%; display: flex; justify-content: space-between; align-items: center; }
@@ -53,11 +53,11 @@ body{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidd
   .stat-chip .lbl { font-size: 0.75rem; margin-bottom: 2px; }
   .stat-chip .val { font-size: 1.15rem; }
   
-  .inventory-row { width: 260px; max-height: 70vh; display: grid; grid-template-columns: 1fr 1fr; background: rgba(45,35,25,0.96); border: 2px solid var(--border); border-radius: 16px; padding: 15px; gap: 8px; pointer-events: auto; overflow-y: auto; backdrop-filter: blur(10px); box-shadow: 0 10px 24px rgba(0,0,0,0.25); z-index: 150; }
+  .inventory-row { width: 220px; max-height: 70vh; display: grid; grid-template-columns: 1fr 1fr; background: rgba(45,35,25,0.96); border: 2px solid var(--border); border-radius: 16px; padding: 15px; gap: 8px; pointer-events: auto; overflow-y: auto; backdrop-filter: blur(10px); box-shadow: 0 10px 24px rgba(0,0,0,0.25); z-index: 150; }
   .inv-item { display: flex; justify-content: space-between; padding: 6px 8px; font-size: 0.85rem; background: rgba(0,0,0,0.25); border-color: rgba(255,255,255,0.08); }
   
   /* Re-position action buttons on the left side, anchored to bottom to prevent cutoff */
-  #sidebar-container { position: relative; top: auto; left: auto; width: 280px; display: flex; flex-direction: column; gap: 10px; pointer-events: auto; z-index: 100; flex: 1; overflow-y: auto; max-height: none; padding-bottom: 20px; }
+  #sidebar-container { position: relative; top: auto; left: auto; width: 240px; display: flex; flex-direction: column; gap: 10px; pointer-events: auto; z-index: 100; flex: 1; overflow-y: auto; max-height: none; padding-bottom: 20px; }
   #sidebar-container::-webkit-scrollbar { width: 6px; }
   #sidebar-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
   
@@ -65,7 +65,7 @@ body{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidd
   .sidebar-row { display: flex; gap: 10px; width: 100%; }
   .sidebar-row > button { flex: 1; text-align: center; padding: 12px 0 !important; }
   
-  #inv-toggle-btn { background: rgba(45,35,25,0.92); border: 2px solid var(--border); color: var(--text); padding: 12px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); backdrop-filter: blur(5px); }
+  #inv-toggle-btn { background: rgba(45,35,25,0.92); border: 2px solid var(--border); color: var(--text); padding: 12px 20px; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); backdrop-filter: blur(5px); }
   .btn-back { position:fixed; top:calc(15px + env(safe-area-inset-top)); left:calc(15px + env(safe-area-inset-left)); z-index:50; background:rgba(45,35,25,0.92); border:2px solid var(--border); color:var(--text); padding:10px 16px; border-radius:12px; font-weight:bold; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.1); backdrop-filter:blur(5px); transition:transform 0.2s; }
   .btn-back:active { transform:scale(0.95); }
   #btn-build { position:fixed; top:calc(70px + env(safe-area-inset-top)); left:calc(15px + env(safe-area-inset-left)); z-index:50; background:rgba(45,35,25,0.92); border:2px solid var(--border); color:var(--text); padding:10px 16px; border-radius:12px; font-weight:bold; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.1); backdrop-filter:blur(5px); transition:transform 0.2s; }
@@ -73,7 +73,7 @@ body{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidd
   #btn-shop { position:fixed; top:calc(125px + env(safe-area-inset-top)); left:calc(15px + env(safe-area-inset-left)); z-index:50; background:rgba(45,35,25,0.92); border:2px solid var(--border); color:var(--text); padding:10px 16px; border-radius:12px; font-weight:bold; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.1); backdrop-filter:blur(5px); transition:transform 0.2s; }
   #btn-shop:active { transform:scale(0.95); }
   #btn-shop:active { transform:scale(0.95); }
-  .tab-content:not(#tab-farm) { padding-left: 320px; box-sizing: border-box; }
+  .tab-content:not(#tab-farm) { padding-left: 280px; box-sizing: border-box; }
 }
 /* Main Layout */
 #main-area { flex:1; display:flex; position:relative; overflow:hidden; }
@@ -305,7 +305,7 @@ body.capture-mode #capture-shutter-btn { display:flex; }
 .quiz-option.wrong{background:rgba(239,68,68,.2)!important;border-color:#ef4444!important;color:#b91c1c}
 @keyframes correctBounce{0%{transform:scale(1);box-shadow:0 0 0 rgba(123,168,118,0)}35%{transform:scale(1.045);box-shadow:0 0 14px rgba(123,168,118,.7)}100%{transform:scale(1);box-shadow:0 0 0 rgba(123,168,118,0)}}
 /* Toasts */
-#toast-box{position:fixed;top:calc(22px + env(safe-area-inset-top));right:calc(22px + env(safe-area-inset-right));z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none;align-items:flex-end;}
+#toast-box{position:fixed;top:calc(22px + env(safe-area-inset-top));right:calc(22px + env(safe-area-inset-right));z-index:100000;display:flex;flex-direction:column;gap:7px;pointer-events:none;align-items:flex-end;}
 .toast{background:var(--card);border:1px solid var(--border);padding:16px 22px;border-radius:12px;font-size:1.05rem;font-weight:700;box-shadow:0 12px 30px rgba(0,0,0,.4);animation:tin .4s cubic-bezier(.34,1.56,.64,1);max-width:380px;pointer-events:all;line-height:1.4;word-break:keep-all;white-space:normal;color:var(--text);}
 .toast.important{background:linear-gradient(135deg, rgba(58,44,32,0.96), rgba(42,32,25,0.98));border:2px solid var(--gold);box-shadow:0 0 20px rgba(250,204,21,0.5);transform-origin:top right;animation:tin-imp .5s cubic-bezier(.34,1.56,.64,1);font-size:1.15rem;padding:20px 25px;}
 .toast.success{border-left:4px solid var(--primary)}
@@ -332,7 +332,7 @@ body.capture-mode #capture-shutter-btn { display:flex; }
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#6B5940;border-radius:99px}
 #quest-board { background:rgba(42,32,25,0.9); border:2px solid var(--primary); border-radius:12px; padding:15px; margin-bottom:10px; box-shadow:0 10px 24px rgba(0,0,0,0.12); color:var(--text); transition:all 0.3s; pointer-events:auto; }
-@media (max-width: 767px) { #quest-board { position:fixed; top:80px; right:20px; width:280px; z-index:9000; } }
+@media (max-width: 767px) { #quest-board { position:fixed; top:80px; right:20px; width:240px; z-index:9000; } }
 #quest-board h3 { margin:0 0 10px 0; font-size:1.1rem; color:var(--primary); display:flex; align-items:center; justify-content:space-between; line-height:1.2; }
 .quest-item { padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); }
 .quest-item.completed { color:var(--muted); text-decoration:line-through; }
@@ -345,7 +345,7 @@ body.capture-mode #capture-shutter-btn { display:flex; }
 .btn-deliver { width:100%; padding:10px; margin-top:12px; background:#ef4444; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; display:none; font-size:1rem; transition:0.2s; }
 .btn-deliver:hover { background:#dc2626; transform:scale(1.02); }
 .build-tabs { display:flex; gap:8px; justify-content:center; margin-bottom:15px; flex-wrap:wrap; }
-#btn-build, #btn-shop, #btn-achievements, #btn-edit-mode { background:rgba(45,35,25,0.92); border:2px solid var(--border); color:var(--text); padding:10px 16px; border-radius:12px; font-weight:bold; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.1); backdrop-filter:blur(5px); }
+#btn-build, #btn-shop, #btn-achievements, #btn-edit-mode { background:rgba(45,35,25,0.92); border:2px solid var(--border); color:var(--text); padding:10px 16px; border-radius:12px; font-weight:bold; font-size:1rem; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.1); backdrop-filter:blur(5px); }
 .build-tab { padding:6px 14px; background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer; font-weight:bold; transition:all 0.2s; }
 .build-tab.active { background:var(--primary); color:#000; border-color:var(--primary); box-shadow:0 0 10px rgba(123,168,118,0.4); }
 </style>
@@ -360,11 +360,11 @@ body.capture-mode #capture-shutter-btn { display:flex; }
 <!-- Top Bar -->
 <div id="topbar">
   <div class="top-header">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <h1 style="display:flex;align-items:center;gap:8px;margin:0;font-size:1.0rem;">🌲 <span style="font-weight:900; background:linear-gradient(45deg, #7BA876, #fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">모여봐요 과학의숲</span></h1>
-      <div style="display:flex;align-items:center;gap:2px;">
-        <button id="btn-mute-all-topbar" class="gs-btn" style="padding:4px 8px;font-size:1.1rem;background:transparent;border:none;box-shadow:none;" onclick="toggleMuteAll()" title="전체 소리 켜기/끄기" aria-label="전체 소리 켜기/끄기">🔊</button>
-        <button class="gs-btn" style="padding:4px 8px;font-size:1.1rem;background:transparent;border:none;box-shadow:none;" onclick="openOptions()" title="환경설정" aria-label="환경설정">⚙️</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:4px;">
+      <h1 style="display:flex;align-items:center;gap:6px;margin:0;font-size:1.0rem;min-width:0;flex:1;overflow:hidden;">🌲 <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:900; background:linear-gradient(45deg, #7BA876, #fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">모여봐요 과학의숲</span></h1>
+      <div style="display:flex;align-items:center;gap:0px;flex-shrink:0;">
+        <button id="btn-mute-all-topbar" class="gs-btn" style="padding:4px 6px;font-size:1.1rem;background:transparent;border:none;box-shadow:none;" onclick="toggleMuteAll()" title="전체 소리 켜기/끄기" aria-label="전체 소리 켜기/끄기">🔊</button>
+        <button class="gs-btn" style="padding:4px 6px;font-size:1.1rem;background:transparent;border:none;box-shadow:none;" onclick="openOptions()" title="환경설정" aria-label="환경설정">⚙️</button>
       </div>
     </div>
     <div style="font-size:1.3rem; color:var(--text); font-weight:900; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:5px;">
@@ -377,17 +377,17 @@ body.capture-mode #capture-shutter-btn { display:flex; }
   </div>
   <div id="sidebar-container">
     <div id="quest-board" style="display:none; padding:12px;">
-      <h3 style="font-size:0.95rem; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-        <span>📜 <span id="qb-step">Q1</span>. <span id="qb-title">첫걸음 딛기</span></span>
-        <button id="btn-quest-detail" class="gs-btn" style="padding:4px 8px; font-size:0.75rem; white-space:nowrap; background:rgba(255,255,255,.15); color:var(--text); border:none;" onclick="toggleQuestDetail(this)">자세히 ▶</button>
-      </h3>
+      <h3 style="font-size:0.95rem; margin-bottom:8px; display:block; word-break:keep-all; line-height:1.35;">📜 <span id="qb-step">Q1</span>. <span id="qb-title">첫걸음 딛기</span></h3>
       <div id="quest-desc" style="display:none;"></div>
       <div id="quest-goal" style="font-size:0.8rem; margin-bottom:4px; color:#fca5a5; font-weight:bold;">목표: 철 0/3, 물 0/3</div>
       <div id="quest-reward" style="font-size:0.8rem; margin-bottom:6px; color:var(--gold); font-weight:bold;">보상: 🪙 100G</div>
       <div id="quest-progress" style="height:6px; margin-bottom:8px; width:100%; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;"><div id="quest-fill" style="height:100%; background:var(--primary); width:0%;"></div></div>
-      <button id="btn-quest-deliver" class="btn-deliver" onclick="deliverQuest()" style="margin-top:5px; padding:8px; font-size:0.9rem;">납품 완료!</button>
+      <div style="display:flex; gap:6px; margin-top:5px;">
+        <button id="btn-quest-deliver" class="btn-deliver" onclick="deliverQuest()" style="width:auto; flex:1; min-width:0; height:36px; margin:0; padding:0 8px; font-size:0.85rem; display:flex; align-items:center; justify-content:center; box-sizing:border-box;">납품 완료!</button>
+        <button id="btn-quest-detail" class="gs-btn" style="flex-shrink:0; height:36px; padding:0 10px; font-size:0.85rem; white-space:nowrap; background:rgba(255,255,255,.15); color:var(--text); border:none; display:flex; align-items:center; justify-content:center; box-sizing:border-box;" onclick="toggleQuestDetail(this)">자세히 ▶</button>
+      </div>
     </div>
-    <div id="quest-detail-panel" style="display:none; width: 260px; background: rgba(45,35,25,0.96); border: 2px solid var(--border); border-radius: 16px; padding: 15px; pointer-events: auto; z-index: 150; box-shadow: 0 10px 24px rgba(0,0,0,0.25); margin-bottom:10px;">
+    <div id="quest-detail-panel" style="display:none; width: 220px; background: rgba(45,35,25,0.96); border: 2px solid var(--border); border-radius: 16px; padding: 15px; pointer-events: auto; z-index: 150; box-shadow: 0 10px 24px rgba(0,0,0,0.25); margin-bottom:10px;">
       <div id="qd-title" style="font-size:1.1rem; font-weight:bold; margin-bottom:8px; color:var(--text);"></div>
       <div id="qd-desc" style="font-size:0.95rem; margin-bottom:12px; line-height:1.5; color:#ccc; word-break:keep-all;"></div>
       <div id="qd-reward" style="font-size:1rem; color:#b8790f; font-weight:bold;"></div>
@@ -842,15 +842,30 @@ body.capture-mode #capture-shutter-btn { display:flex; }
 
 <!-- Intro Modal -->
 <div id="intro-modal" class="modal-overlay" style="display:none;z-index:99999;align-items:center;justify-content:center;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);backdrop-filter:blur(5px);">
-  <div style="background:var(--modal-bg);padding:30px;border-radius:16px;border:2px solid var(--primary);text-align:center;max-width:400px;width:90%;box-shadow:0 20px 45px rgba(0,0,0,0.3);color:var(--modal-text);">
-    <h2 style="margin-top:0;font-size:2rem;margin-bottom:15px; font-weight:900; background:linear-gradient(45deg, #7BA876, #fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-shadow: 0 4px 15px rgba(123, 168, 118, 0.4);">🌲 모여봐요 과학의숲</h2>
-    <p style="color:var(--modal-text);font-size:1rem;line-height:1.6;margin-bottom:20px;word-break:keep-all;">
-      황폐한 이곳을 거대한 생명의 세계로 가꾸어보세요!<br><br>
-      자원을 모으고 가공하여 건물을 짓고, 퀴즈를 풀어 보상을 얻어보세요. 세계수 돔을 가동하는 것이 당신의 최종 목표입니다.
-    </p>
-    <input type="text" id="intro-player-name" placeholder="당신의 이름을 알려주세요!" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--modal-border);background:#FFFFFF;color:var(--modal-text);margin-bottom:10px;font-size:1rem;text-align:center;box-sizing:border-box;">
-    <input type="text" id="intro-farm-name" maxlength="10" placeholder="멋진 농장 이름을 지어주세요! (최대 10자)" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--modal-border);background:#FFFFFF;color:var(--modal-text);margin-bottom:20px;font-size:1rem;text-align:center;box-sizing:border-box;">
-    <button class="gs-btn" style="width:100%;background:var(--primary);color:#000;font-size:1.1rem;padding:12px;" onclick="startGame()">🚀 게임 시작하기</button>
+  <div style="background:var(--modal-bg);padding:30px;border-radius:16px;border:2px solid var(--primary);text-align:center;max-width:420px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 45px rgba(0,0,0,0.3);color:var(--modal-text);box-sizing:border-box;">
+
+    <div id="intro-step1">
+      <h2 style="margin-top:0;font-size:2rem;margin-bottom:15px; font-weight:900; background:linear-gradient(45deg, #7BA876, #fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-shadow: 0 4px 15px rgba(123, 168, 118, 0.4);">🌲 모여봐요 과학의숲</h2>
+      <p style="color:var(--modal-text);font-size:1rem;line-height:1.6;margin-bottom:18px;word-break:keep-all;">
+        황폐한 이곳을 거대한 생명의 세계로 가꾸어보세요!<br>
+        세계수 돔을 가동하는 것이 당신의 최종 목표입니다.
+      </p>
+      <div style="text-align:left;background:rgba(255,255,255,0.4);border-radius:12px;padding:16px;margin-bottom:20px;display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="font-size:1.4rem;">🗺️</span><span style="font-size:0.9rem;line-height:1.5;word-break:keep-all;"><b>탐험</b>에서 구역을 고르고 퀴즈를 풀어 자원을 모아요.</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="font-size:1.4rem;">🛠️</span><span style="font-size:0.9rem;line-height:1.5;word-break:keep-all;"><b>제작소</b>에서 모은 자원으로 건물을 짓고 키워요.</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="font-size:1.4rem;">🏠</span><span style="font-size:0.9rem;line-height:1.5;word-break:keep-all;"><b>내 농장</b>에서 농사를 짓고 나만의 숲을 꾸며요.</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="font-size:1.4rem;">📜</span><span style="font-size:0.9rem;line-height:1.5;word-break:keep-all;">화면의 <b>퀘스트</b>를 순서대로 따라가면 길을 잃지 않아요.</span></div>
+      </div>
+      <button class="gs-btn" style="width:100%;background:var(--primary);color:#000;font-size:1.1rem;padding:12px;" onclick="introGoToStep2()">다음 →</button>
+    </div>
+
+    <div id="intro-step2" style="display:none;">
+      <h2 style="margin-top:0;font-size:1.5rem;margin-bottom:15px;font-weight:900;color:var(--modal-text);">✍️ 마지막으로 알려주세요</h2>
+      <input type="text" id="intro-player-name" placeholder="당신의 이름을 알려주세요!" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--modal-border);background:#FFFFFF;color:var(--modal-text);margin-bottom:10px;font-size:1rem;text-align:center;box-sizing:border-box;">
+      <input type="text" id="intro-farm-name" maxlength="10" placeholder="멋진 농장 이름을 지어주세요! (최대 10자)" style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--modal-border);background:#FFFFFF;color:var(--modal-text);margin-bottom:20px;font-size:1rem;text-align:center;box-sizing:border-box;">
+      <button class="gs-btn" style="width:100%;background:var(--primary);color:#000;font-size:1.1rem;padding:12px;" onclick="startGame()">🚀 게임 시작하기</button>
+    </div>
+
   </div>
 </div>
 
@@ -5146,9 +5161,17 @@ function resetGameData(){
     location.reload();
   }, '💥 데이터 초기화');
 }
+function introGoToStep2(){
+  document.getElementById('intro-step1').style.display='none';
+  document.getElementById('intro-step2').style.display='block';
+}
 function startGame(){
-  const name = document.getElementById('intro-farm-name').value.trim().slice(0,10) || '내 농장';
   const playerName = document.getElementById('intro-player-name').value.trim();
+  const name = document.getElementById('intro-farm-name').value.trim().slice(0,10);
+  if(!playerName || !name){
+    toast('⚠️ 이름과 농장 이름을 모두 입력해주세요!', 'error');
+    return;
+  }
   S.farmName = name;
   S.playerName = playerName;
   S.introSeen = true;
