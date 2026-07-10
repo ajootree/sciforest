@@ -877,6 +877,19 @@ body.capture-mode #capture-shutter-btn { display:flex; }
   </div>
 </div>
 
+<!-- New Quest Popup -->
+<div id="quest-popup-modal" class="modal-overlay" style="display:none;z-index:99999;align-items:center;justify-content:center;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);backdrop-filter:blur(5px);">
+  <div style="background:var(--modal-bg);padding:30px;border-radius:16px;border:2px solid var(--primary);text-align:center;max-width:420px;width:90%;box-shadow:0 20px 45px rgba(0,0,0,0.3);color:var(--modal-text);position:relative;">
+    <button class="modal-close-btn" onclick="closeQuestPopup()">&times;</button>
+    <div style="font-size:0.9rem;color:var(--gold);font-weight:900;margin-bottom:6px;">📜 새로운 퀘스트!</div>
+    <h2 id="qp-title" style="margin:0 0 12px;font-size:1.4rem;color:var(--modal-text);"></h2>
+    <p id="qp-desc" style="font-size:0.95rem;line-height:1.6;margin-bottom:14px;word-break:keep-all;color:var(--modal-text);"></p>
+    <div id="qp-goal" style="font-size:0.85rem;font-weight:bold;color:#ef4444;margin-bottom:8px;"></div>
+    <div id="qp-reward" style="font-size:1rem;font-weight:bold;color:var(--gold);margin-bottom:18px;"></div>
+    <button class="gs-btn" style="width:100%;background:var(--primary);color:#000;font-size:1.05rem;padding:12px;" onclick="closeQuestPopup()">확인!</button>
+  </div>
+</div>
+
 <!-- Options Modal -->
 <div id="options-modal" class="modal-overlay" style="display:none;z-index:99999;align-items:center;justify-content:center;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);">
   <div style="background:var(--modal-bg);padding:25px;border-radius:12px;border:1px solid var(--modal-border);text-align:center;width:90%;max-width:650px;box-shadow:0 10px 30px rgba(0,0,0,0.25);box-sizing:border-box;position:relative;color:var(--modal-text);max-height:90vh;overflow-y:auto;">
@@ -2399,11 +2412,10 @@ function updateQuestUI() {
   document.getElementById('quest-fill').style.width = q.pct() + '%';
   document.getElementById('btn-quest-deliver').style.display = 'inline-block';
 
-  if(S.lastAnnouncedQuest !== qs && !suppressQuestPopup) {
+  if(S.lastAnnouncedQuest !== qs && !suppressQuestPopup && S.introSeen) {
     S.lastAnnouncedQuest = qs;
     saveState();
-    const btn = document.getElementById('btn-quest-detail');
-    if(btn) toggleQuestDetail(btn, true);
+    showQuestPopup(q, qs);
     if(qs === 11 && typeof spawnWeedEvent === 'function') spawnWeedEvent();
   }
 
@@ -2471,7 +2483,19 @@ function closeQuestDetail() {
   if(content) content.style.display = 'none';
   if(btn) btn.innerHTML = '자세히 ▶';
 }
-function closeQuestPopup() {}
+function showQuestPopup(q, qs) {
+  if(!q) return;
+  document.getElementById('qp-title').textContent = `Q${qs}. ${q.title}`;
+  document.getElementById('qp-desc').textContent = q.desc;
+  document.getElementById('qp-goal').textContent = q.getGoalText();
+  const rewardText = getQuestRewardParts(q).join(', ');
+  document.getElementById('qp-reward').textContent = rewardText ? `보상: ${rewardText}` : '';
+  document.getElementById('quest-popup-modal').style.display = 'flex';
+  sndFanfare();
+}
+function closeQuestPopup() {
+  document.getElementById('quest-popup-modal').style.display = 'none';
+}
 
 function deliverQuest() {
   const q = QUESTS[S.questStep];
@@ -5229,11 +5253,15 @@ function spawnWeedEvent() {
     { transform: 'translateY(-3px) rotate(3deg)' }
   ], { duration: 1500, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out' });
   
-  marker.onclick = () => {
+  const weedClickHandler = (e) => {
+    if(hasPanned) return;
+    e.preventDefault(); e.stopPropagation();
     marker.remove();
     showSurpriseQuiz();
   };
-  
+  marker.onclick = weedClickHandler;
+  marker.ontouchend = (e) => { if(!hasPanned){ weedClickHandler(e); } };
+
   map.appendChild(marker);
 }
 setInterval(spawnWeedEvent, 60000);
