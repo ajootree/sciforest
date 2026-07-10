@@ -4219,9 +4219,9 @@ mapWrapper.addEventListener('touchmove',e=>{
     mapX=panStartMX+dx; mapY=panStartMY+dy; clampMap(); applyTransform();
   } else if(e.touches.length===2){
     const dist=getTouchDist(e.touches); const rect=mapWrapper.getBoundingClientRect(); const mid=getTouchMid(e.touches,rect);
-    const prevScale=mapScale; mapScale=Math.max(0.15, Math.min(3, pinchStartScale*(dist/pinchStartDist)));
-    mapX=mid.x-(panStartX-panStartMX)-(mid.x-panStartX)*(mapScale/prevScale);
-    mapY=mid.y-(panStartY-panStartMY)-(mid.y-panStartY)*(mapScale/prevScale);
+    mapScale=Math.max(0.15, Math.min(3, pinchStartScale*(dist/pinchStartDist)));
+    mapX=mid.x-(panStartX-panStartMX)*(mapScale/pinchStartScale);
+    mapY=mid.y-(panStartY-panStartMY)*(mapScale/pinchStartScale);
     clampMap(); applyTransform();
   }
   if(!buildModeItem || buildModeItem.type === 'path') e.preventDefault();
