@@ -776,7 +776,7 @@ body.capture-mode #capture-shutter-btn { display:flex; }
     </div>
     <div id="shop-modal-total" style="font-size:1.5rem; font-weight:bold; color:var(--gold); margin-bottom:25px;">총: 0G</div>
     <div style="display:flex; gap:10px;">
-      <button class="gs-btn" style="flex:1; background:rgba(123,168,118,0.4); border-color:#7BA876;" onclick="confirmShop()">확인</button>
+      <button id="btn-shop-confirm" class="gs-btn" style="flex:1; background:rgba(123,168,118,0.4); border-color:#7BA876;" onclick="confirmShop()">확인</button>
     </div>
   </div>
 </div>
@@ -824,7 +824,7 @@ body.capture-mode #capture-shutter-btn { display:flex; }
     <p id="craft-desc" style="color:var(--modal-muted);font-size:0.9rem;margin-bottom:20px;">자원을 변환합니다.</p>
     <div id="craft-timer-box" style="display:none;margin-bottom:16px;background:rgba(59,130,246,0.14);border:1px solid #3b82f6;border-radius:8px;padding:10px;">
       <div style="font-size:1rem;font-weight:bold;color:#3b82f6;">⏳ 남은 시간: <span id="craft-timer-val">0</span>초</div>
-      <button class="gs-btn" style="width:100%;margin-top:8px;background:#3b82f6;color:#fff;border:none;font-size:0.9rem;" onclick="showSurpriseQuiz()">📖 기다리는 동안 문제 풀어볼까요?</button>
+      <button class="gs-btn" style="width:100%;margin-top:8px;background:#3b82f6;color:#fff;border:none;font-size:0.9rem;" onclick="showCraftWaitQuiz()">📖 기다리는 동안 문제 풀어볼까요?</button>
     </div>
     <div id="craft-req" style="margin-bottom:20px;font-size:1.1rem;background:rgba(186,117,23,0.14);padding:10px;border-radius:8px;"></div>
     
@@ -1750,6 +1750,7 @@ const quizBags = { 1: createShuffleBag(QUIZZES[1]), 2: createShuffleBag(QUIZZES[
 const weedQuizBag = createShuffleBag(SURPRISE_QUIZZES);
 
 const REWARDS={1:['iron'],2:['water'],3:['dirt'],4:['spore']};
+const RES_ZONE={iron:1,water:2,dirt:3,spore:4};
 const ZONE_NAMES={1:'🧲 자석 광산',2:'🧊 얼음 호수',3:'⛰️ 화산 지대',4:'🍄 포자 숲'};
 const ZONE_COL={1:'#a855f7',2:'#3b82f6',3:'#f59e0b',4:'#7BA876'};
 const GOLD_SHOP=[
@@ -1811,14 +1812,42 @@ function loadState(){
   }catch(e){}
   return state;
 }
+const activeToasts = new Map();
 function toast(msg,type='info',dur=7500,isImportant=false){
   const box = document.getElementById('toast-box');
   if(!box) return;
+  const key = type+'|'+msg;
+  const existing = activeToasts.get(key);
+  if(existing){
+    // 같은 알림이 사라지기 전에 반복되면 새로 쌓지 않고 횟수만 올려서 표시
+    existing.count++;
+    clearTimeout(existing.timeoutId);
+    let countEl = existing.el.querySelector('.toast-repeat-count');
+    if(!countEl){
+      countEl = document.createElement('span');
+      countEl.className = 'toast-repeat-count';
+      countEl.style.cssText = 'margin-left:6px;opacity:0.85;font-weight:700;';
+      existing.el.appendChild(countEl);
+    }
+    countEl.textContent = '×' + existing.count;
+    existing.timeoutId = setTimeout(()=>{
+      existing.el.classList.add('out');
+      setTimeout(()=>existing.el.remove(),300);
+      activeToasts.delete(key);
+    },dur);
+    return;
+  }
   const el=document.createElement('div');
   el.className='toast '+type+(isImportant?' important':'');
   el.innerHTML=msg;
   box.appendChild(el);
-  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),300);},dur);
+  const entry = { el, count:1, timeoutId:null };
+  entry.timeoutId = setTimeout(()=>{
+    el.classList.add('out');
+    setTimeout(()=>el.remove(),300);
+    activeToasts.delete(key);
+  },dur);
+  activeToasts.set(key, entry);
 }
 
 const ACHIEVEMENTS = [
@@ -2930,7 +2959,19 @@ function updateShopModal() {
   document.getElementById('shop-modal-title').textContent = isBuy ? '🛒 자원 구매' : '💰 자원 판매';
   document.getElementById('shop-modal-icon').textContent = shopState.item.emoji;
   document.getElementById('shop-modal-amt').textContent = shopState.amt;
-  document.getElementById('shop-modal-total').textContent = isBuy ? `총: ${shopState.amt * shopState.item.cost}G` : `총: ${shopState.amt * shopState.item.sell}G`;
+  const totalPrice = shopState.amt * (isBuy ? shopState.item.cost : shopState.item.sell);
+  document.getElementById('shop-modal-total').textContent = `총: ${totalPrice}G`;
+
+  const owned = S[shopState.item.res] || 0;
+  const enough = isBuy ? (S.gold||0) >= totalPrice : owned >= shopState.amt;
+  const descEl = document.getElementById('shop-modal-desc');
+  descEl.innerHTML = isBuy
+    ? `보유 골드: <b style="color:${enough ? 'inherit' : '#ef4444'}">${S.gold||0}G</b>`
+    : `보유 수량: <b style="color:${enough ? 'inherit' : '#ef4444'}">${owned}개</b>`;
+
+  const confirmBtn = document.getElementById('btn-shop-confirm');
+  confirmBtn.disabled = !enough;
+  confirmBtn.style.opacity = enough ? '1' : '0.5';
 }
 
 function confirmShop() {
@@ -3066,6 +3107,7 @@ function openCraftPopup(b) {
   } catch(e) { toast('CraftPopup 에러: ' + e.message, 'error'); }
 }
 let craftPopupTimerInterval = null;
+let infoPopupTimerInterval = null;
 function updateCraftTimerDisp() {
   const b = currentCraftBuilding;
   const box = document.getElementById('craft-timer-box');
@@ -3109,7 +3151,7 @@ function startCraft(b) {
   if(!craftPopupTimerInterval) craftPopupTimerInterval = setInterval(updateCraftTimerDisp, 1000);
 }
 function harvestCraft(b, e) {
-  e.preventDefault(); e.stopPropagation();
+  if(e){ e.preventDefault(); e.stopPropagation(); }
   const r = CRAFT_RECIPES[b.id];
   if(!r || !b.craftFinished) return;
   const amt = b.craftFinished;
@@ -3122,7 +3164,8 @@ function harvestCraft(b, e) {
   if(r.outRes==='power' && b.id==='b7') S.crafts.power_geo += gained;
 
   toast(r.name+' '+gained+' 획득 완료!','success');
-  saveState(); updateUI(); renderBuildings();
+  const item = ITEMS.find(i=>i.id===b.id);
+  saveState(); updateUI(); tickCraft(b, item);
   if(typeof checkQuest==='function') checkQuest();
 }
 
@@ -3191,6 +3234,7 @@ function openInfoPopup(b) {
   try {
   if(hasPanned)return;
   sndClick();
+  if(infoPopupTimerInterval){ clearInterval(infoPopupTimerInterval); infoPopupTimerInterval = null; }
   const item = ITEMS.find(i=>i.id===b.id);
   document.getElementById('info-title').innerHTML = item.emoji + ' ' + item.name;
   let itemDescText = item.desc;
@@ -3221,18 +3265,8 @@ function openInfoPopup(b) {
       btn.style.width = '100%'; btn.style.borderColor = '#fbbf24';
       btn.innerHTML = '🍒 열매 모두 수확하기 (열매 +'+(cnt*prodMult())+')';
       btn.onclick = () => {
-        sndPickup();
-        const gained = b.fruitCount * prodMult();
-        S.fruit += gained;
-        S.harvests = (S.harvests||0) + gained;
-        S.manualHarvests = (S.manualHarvests||0) + gained;
-        S.fruitHarvests = (S.fruitHarvests||0) + gained;
-        toast('🍒 열매 '+gained+'개 획득!','success');
-        b.fruitCount = 0;
-        b.fruitStart = Date.now();
-        saveState(); updateUI(); renderBuildings();
+        harvestTreeFruit(b, item);
         document.getElementById('info-popup').style.display='none';
-        if(typeof checkQuest==='function') checkQuest();
       };
       actionEl.appendChild(btn);
     }
@@ -3247,7 +3281,7 @@ function openInfoPopup(b) {
         b.fruitCount = Math.min(max, (b.fruitCount||0) + 2);
         S.fertilizes = (S.fertilizes||0) + 1;
         toast('🦠 비료 효과로 열매가 열렸습니다!','success');
-        saveState(); renderBuildings(); updateUI();
+        saveState(); tickTree(b, item); updateUI();
         document.getElementById('info-popup').style.display='none';
       } else toast('원생생물이 부족합니다!','error');
     };
@@ -3263,8 +3297,8 @@ function openInfoPopup(b) {
       btnNormal.onclick = () => {
         if(S.seed>=1){
           S.seed--; b.growing=true; b.plantTime=Date.now(); b.fertilized=false;
-          toast('🌱 씨앗을 심었습니다! (1분 30초 후 농산물 1개 수확)','info'); 
-          saveState(); renderBuildings(); updateUI();
+          toast('🌱 씨앗을 심었습니다! (1분 30초 후 농산물 1개 수확)','info');
+          saveState(); tickFarm(b, item); updateUI();
           document.getElementById('info-popup').style.display='none';
         } else toast('씨앗이 부족합니다. 상점에서 구매하세요.','error');
       };
@@ -3277,16 +3311,36 @@ function openInfoPopup(b) {
         if(S.seed>=1 && (S.micro||0)>=1){
           S.seed--; S.micro--; b.growing=false; b.ready=true; b.fertilized=true;
           S.fertilizes = (S.fertilizes||0) + 1;
-          toast('🦠 비료를 주어 즉시 자라났습니다! (수확량 3배)','success'); 
-          saveState(); renderBuildings(); updateUI();
+          toast('🦠 비료를 주어 즉시 자라났습니다! (수확량 3배)','success');
+          saveState(); tickFarm(b, item); updateUI();
           document.getElementById('info-popup').style.display='none';
         } else toast('씨앗이나 원생생물이 부족합니다!','error');
       };
       actionEl.appendChild(btnFert);
 
     } else if(b.growing) {
-      const pct = Math.min(100, ((Date.now()-b.plantTime)/90000)*100);
+      const growMs = 90000;
+      const pct = Math.min(100, ((Date.now()-b.plantTime)/growMs)*100);
       statusEl.innerHTML = '현재 자라는 중... ('+Math.floor(pct)+'% 완료)' + (b.fertilized ? '<br><span style="color:#a855f7;font-size:0.9rem;">(비료 효과 적용됨: 수확량 2배)</span>' : '<br><span style="color:var(--modal-muted);font-size:0.9rem;">(기본 재배 중)</span>');
+
+      const timerBox = document.createElement('div');
+      timerBox.style.cssText = 'margin-top:16px;background:rgba(59,130,246,0.14);border:1px solid #3b82f6;border-radius:8px;padding:10px;';
+      const remainSec = Math.max(0, Math.ceil((growMs - (Date.now()-b.plantTime))/1000));
+      timerBox.innerHTML = `<div style="font-size:1rem;font-weight:bold;color:#3b82f6;">⏳ 남은 시간: <span id="info-timer-val">${remainSec}</span>초</div><button class="gs-btn" style="width:100%;margin-top:8px;background:#3b82f6;color:#fff;border:none;font-size:0.9rem;" onclick="showFarmWaitQuiz()">📖 기다리는 동안 문제 풀어볼까요?</button>`;
+      actionEl.appendChild(timerBox);
+
+      infoPopupTimerInterval = setInterval(() => {
+        if(document.getElementById('info-popup').style.display !== 'flex'){
+          clearInterval(infoPopupTimerInterval); infoPopupTimerInterval = null; return;
+        }
+        const remain = Math.max(0, Math.ceil((growMs - (Date.now()-b.plantTime))/1000));
+        const valEl = document.getElementById('info-timer-val');
+        if(valEl) valEl.textContent = remain;
+        if(remain <= 0){
+          clearInterval(infoPopupTimerInterval); infoPopupTimerInterval = null;
+          if(b.growing || b.ready) openInfoPopup(b);
+        }
+      }, 1000);
     } else if(b.ready) {
       statusEl.innerHTML = '<span style="color:#7BA876;">작물이 다 자랐습니다!</span>' + (b.fertilized ? ' <span style="color:#a855f7;">(비료 적용됨)</span>' : '');
       const btn = document.createElement('button');
@@ -3294,13 +3348,7 @@ function openInfoPopup(b) {
       const yieldAmt = (b.fertilized ? 3 : 1) * prodMult();
       btn.innerHTML = `🌾 수확하기 (농산물 +${yieldAmt})`;
       btn.onclick = () => {
-        sndPickup();
-        b.ready=false;
-        S.crop += yieldAmt;
-        b.fertilized = false;
-        toast(`🌾 농산물 ${yieldAmt}개 수확! (다시 씨앗을 심으세요)`,'success'); 
-        saveState(); renderBuildings(); updateUI();
-        if(typeof checkQuest==='function') checkQuest();
+        harvestFarmTile(b, item);
         document.getElementById('info-popup').style.display='none';
       };
       actionEl.appendChild(btn);
@@ -3924,6 +3972,18 @@ function checkChalQuiz(){
   }
   updateUI();
 }
+// 가공 대기 중 문제 풀기: 잡초 OX 퀴즈가 아니라 탐험모드의 구역 퀴즈로 연계
+function showCraftWaitQuiz(){
+  const b = currentCraftBuilding;
+  const r = b && CRAFT_RECIPES[b.id];
+  const zoneKey = r && Object.keys(r.inCost).find(k => RES_ZONE[k]);
+  const zone = zoneKey ? RES_ZONE[zoneKey] : 1;
+  openQuiz(zone);
+}
+// 농지 재배 대기 중 문제 풀기: 특정 단원과 연결되지 않으므로 구역을 무작위로 선택
+function showFarmWaitQuiz(){
+  openQuiz(1 + Math.floor(Math.random()*4));
+}
 // Surprise Quiz System
 function showSurpriseQuiz(){
   sndClick();
@@ -4537,16 +4597,15 @@ function refreshBuildingIcon(b, item) {
   const vis = getBuildingVisual(b, item);
   renderIconImg(icon, item, vis.img, vis.filter, vis.glow);
 }
-function setHarvestIcon(div, emoji, count, onHarvest, showBadge=true) {
+function setHarvestIcon(div, emoji, count, showBadge=true) {
+  // 순수 표시용 배지: 좁은 모서리를 직접 눌러야 했던 문제를 없애기 위해 클릭은 건물 본체(div)에서 처리한다.
   const existing = div.querySelector('.harvest-ready-icon');
   if (existing) existing.remove();
   if (!count) return;
   const el = document.createElement('div');
   el.className = 'harvest-ready-icon';
   el.innerHTML = emoji + (showBadge ? '<span style="font-size:0.8rem;background:#ef4444;border-radius:10px;padding:2px 6px;position:absolute;top:-5px;right:-10px;">'+count+'</span>' : '');
-  el.style.cssText='position:absolute;top:-20px;right:-20px;font-size:1.8rem;cursor:pointer;background:rgba(0,0,0,0.7);border-radius:50%;padding:8px;z-index:100;display:flex;align-items:center;justify-content:center;';
-  el.onmousedown = onHarvest;
-  el.ontouchstart = onHarvest;
+  el.style.cssText='position:absolute;top:-20px;right:-20px;font-size:1.8rem;pointer-events:none;background:rgba(0,0,0,0.7);border-radius:50%;padding:8px;z-index:100;display:flex;align-items:center;justify-content:center;';
   div.appendChild(el);
 }
 function setProgressBar(div, pct, color) {
@@ -4587,26 +4646,28 @@ function tickTree(b, item) {
     }
   }
   refreshBuildingIcon(b, item);
-  setHarvestIcon(div, '🍒', b.fruitCount, (e)=>{
-    e.preventDefault(); e.stopPropagation();
-    sndPickup();
-    const gained = b.fruitCount * prodMult();
-    S.fruit += gained;
-    S.harvests = (S.harvests||0) + gained;
-    S.manualHarvests = (S.manualHarvests||0) + gained;
-    S.fruitHarvests = (S.fruitHarvests||0) + gained;
-    toast('🍒 열매 '+gained+'개 획득!','success');
-    b.fruitCount=0; b.fruitStart = Date.now();
-    saveState(); tickTree(b, item); updateUI();
-    if(typeof checkQuest==='function') checkQuest();
-  });
+  setHarvestIcon(div, '🍒', b.fruitCount);
+}
+
+// 나무 본체를 눌렀을 때와 팝업의 "열매 모두 수확하기" 버튼이 공유하는 수확 처리
+function harvestTreeFruit(b, item) {
+  sndPickup();
+  const gained = b.fruitCount * prodMult();
+  S.fruit += gained;
+  S.harvests = (S.harvests||0) + gained;
+  S.manualHarvests = (S.manualHarvests||0) + gained;
+  S.fruitHarvests = (S.fruitHarvests||0) + gained;
+  toast('🍒 열매 '+gained+'개 획득!','success');
+  b.fruitCount = 0; b.fruitStart = Date.now();
+  saveState(); tickTree(b, item); updateUI();
+  if(typeof checkQuest==='function') checkQuest();
 }
 
 function tickFarm(b, item) {
   const div = getBuildingDiv(b);
   if (!div) return;
   if (b.growing) {
-    const pct = Math.min(100, ((Date.now()-b.plantTime)/60000)*100);
+    const pct = Math.min(100, ((Date.now()-b.plantTime)/90000)*100);
     if (pct >= 100) {
       b.growing = false; b.ready = true;
       refreshBuildingIcon(b, item);
@@ -4616,15 +4677,19 @@ function tickFarm(b, item) {
       setTimeout(() => tickFarm(b, item), 1000);
     }
   }
-  setHarvestIcon(div, '🌾', b.ready?1:0, (e)=>{
-    e.preventDefault(); e.stopPropagation(); sndPickup(); b.ready=false;
-    const yieldAmt = (b.fertilized ? 3 : 1) * prodMult();
-    S.crop += yieldAmt; b.fertilized = false;
-    S.harvests=(S.harvests||0)+1; S.manualHarvests=(S.manualHarvests||0)+1;
-    toast(`🌾 농산물 ${yieldAmt}개 수확! (다시 씨앗을 심으세요)`,'success');
-    saveState(); refreshBuildingIcon(b, item); tickFarm(b, item); updateUI();
-    if(typeof checkQuest==='function') checkQuest();
-  }, false);
+  setHarvestIcon(div, '🌾', b.ready?1:0, false);
+}
+
+// 농지 본체를 눌렀을 때와 팝업의 "수확하기" 버튼이 공유하는 수확 처리
+function harvestFarmTile(b, item) {
+  sndPickup();
+  b.ready = false;
+  const yieldAmt = (b.fertilized ? 3 : 1) * prodMult();
+  S.crop += yieldAmt; b.fertilized = false;
+  S.harvests=(S.harvests||0)+1; S.manualHarvests=(S.manualHarvests||0)+1;
+  toast(`🌾 농산물 ${yieldAmt}개 수확! (다시 씨앗을 심으세요)`,'success');
+  saveState(); tickFarm(b, item); updateUI();
+  if(typeof checkQuest==='function') checkQuest();
 }
 
 function tickCraft(b, item) {
@@ -4641,7 +4706,7 @@ function tickCraft(b, item) {
       b.craftStart += done * timePerItem;
     }
   }
-  setHarvestIcon(div, EMOJIS[r.outRes], b.craftFinished || 0, (e)=>harvestCraft(b,e));
+  setHarvestIcon(div, EMOJIS[r.outRes], b.craftFinished || 0);
   if (b.craftQueue > 0) {
     const timePerItem = r.time * 1000;
     const elapsed = Date.now() - b.craftStart;
@@ -4727,6 +4792,7 @@ function renderBuildings(){
         const clickHandler = (e) => {
           if(hasPanned) { toast('드래그(팬) 감지됨: 입력 무시', 'warning', 1000); return; }
           e.preventDefault(); e.stopPropagation();
+          if(b.fruitCount > 0){ harvestTreeFruit(b, item); return; }
           openInfoPopup(b);
         };
         div.onclick = clickHandler;
@@ -4737,6 +4803,7 @@ function renderBuildings(){
         const clickHandler = (e) => {
           if(hasPanned) { return; }
           e.preventDefault(); e.stopPropagation();
+          if(b.ready){ harvestFarmTile(b, item); return; }
           window.lastPopupTime = Date.now();
           openInfoPopup(b);
         };
@@ -4749,6 +4816,7 @@ function renderBuildings(){
         const clickHandler = (e) => {
           if(hasPanned) { return; }
           e.preventDefault(); e.stopPropagation();
+          if(b.craftFinished > 0){ harvestCraft(b, e); return; }
           window.lastPopupTime = Date.now();
           openCraftPopup(b);
         };
