@@ -193,6 +193,7 @@ body.capture-mode #capture-shutter-btn { display:flex; }
 .sell-btn{display:flex;align-items:center;gap:10px;text-align:left;}
 .sell-btn .sell-emoji{font-size:2.4rem;line-height:1;}
 .sell-btn .sell-info{flex:1;}
+.sell-btn .sell-owned{display:inline-block;color:var(--muted);font-weight:400;font-size:.78rem;margin-left:4px;}
 /* Farming Zones */
 .farming-zone{flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
 #tab-z1{background:linear-gradient(135deg,#1a0a2e,#2d1b4e,#4a1942)}
@@ -465,6 +466,7 @@ body.capture-mode #capture-shutter-btn { display:flex; }
   <div id="tab-farm" class="tab-content active">
     <div id="farm-wrapper">
       <div id="map"></div>
+      <div id="edit-mode-hint" style="display:none; position:absolute; top:16px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.45); color:#fff; font-size:0.85rem; font-weight:600; padding:8px 16px; border-radius:20px; z-index:90; pointer-events:none; white-space:nowrap; text-shadow:0 1px 3px rgba(0,0,0,0.6);">✌️ 두 손가락으로 눌러서 화면을 이동하세요</div>
       <div id="edit-inventory" style="display:none; position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.95); padding:15px; border-radius:12px; border:1px solid var(--primary); z-index:100; max-width:90%; overflow-x:auto; gap:10px; box-shadow:0 -5px 20px rgba(0,0,0,0.5); align-items:center;"></div>
     </div>
     <button id="capture-exit-btn" onclick="exitCaptureMode()">✕ 캡처 모드 종료</button>
@@ -817,9 +819,13 @@ body.capture-mode #capture-shutter-btn { display:flex; }
 <!-- Crafting Popup -->
 <div id="craft-popup" class="modal-overlay" style="display:none;z-index:99999;align-items:center;justify-content:center;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);">
   <div style="background:var(--modal-bg);padding:20px;border-radius:12px;border:2px solid #BA7517;text-align:center;min-width:300px;box-shadow:0 10px 30px rgba(0,0,0,0.25);position:relative;color:var(--modal-text);">
-    <button class="modal-close-btn" onclick="document.getElementById('craft-popup').style.display='none'">&times;</button>
+    <button class="modal-close-btn" onclick="closeCraftPopup()">&times;</button>
     <h3 id="craft-title" style="margin-top:0;font-size:1.5rem;color:var(--modal-text)">가공소</h3>
     <p id="craft-desc" style="color:var(--modal-muted);font-size:0.9rem;margin-bottom:20px;">자원을 변환합니다.</p>
+    <div id="craft-timer-box" style="display:none;margin-bottom:16px;background:rgba(59,130,246,0.14);border:1px solid #3b82f6;border-radius:8px;padding:10px;">
+      <div style="font-size:1rem;font-weight:bold;color:#3b82f6;">⏳ 남은 시간: <span id="craft-timer-val">0</span>초</div>
+      <button class="gs-btn" style="width:100%;margin-top:8px;background:#3b82f6;color:#fff;border:none;font-size:0.9rem;" onclick="showSurpriseQuiz()">📖 기다리는 동안 문제 풀어볼까요?</button>
+    </div>
     <div id="craft-req" style="margin-bottom:20px;font-size:1.1rem;background:rgba(186,117,23,0.14);padding:10px;border-radius:8px;"></div>
     
     <div style="margin-bottom:20px;text-align:left;">
@@ -1317,6 +1323,8 @@ const ITEMS=[
   {id:'t_vvip',name:'황금 티켓',emoji:'🎫',img:'assets/t_vvip.png',sizeW:2,sizeH:3,cost:{gold:1000},desc:'센터 VVIP 고객 업적 기념 트로피입니다.',badge:'업적',type:'deco',env:50,onPlace(){S.envScore+=this.env;toast('🎫 트로피를 세웠습니다!','success');}},
   {id:'t_destroy',name:'위험한 다이너마이트',emoji:'💣',img:'assets/t_destroy.png',sizeW:2,sizeH:3,cost:{gold:1000},desc:'자연의 파괴왕 업적 기념 트로피입니다.',badge:'업적',type:'deco',env:50,onPlace(){S.envScore+=this.env;toast('💣 트로피를 세웠습니다!','success');}},
   {id:'t_streak',name:'반짝이는 트로피',emoji:'🧠',img:'assets/t_streak.png',sizeW:2,sizeH:3,cost:{gold:1000},desc:'퀴즈 마스터 업적 기념 트로피입니다.',badge:'업적',type:'deco',env:50,onPlace(){S.envScore+=this.env;toast('🧠 트로피를 세웠습니다!','success');}},
+  {id:'t_fertilizer',name:'황금 비료 포대',emoji:'🦠',img:'assets/t_fertilizer.png',sizeW:2,sizeH:3,cost:{gold:1000},desc:'비료 마스터 업적 기념 트로피입니다.',badge:'업적',type:'deco',env:50,onPlace(){S.envScore+=this.env;toast('🦠 트로피를 세웠습니다!','success');}},
+  {id:'t_arcade',name:'빛나는 조이스틱',emoji:'🕹️',img:'assets/t_arcade.png',sizeW:2,sizeH:3,cost:{gold:1000},desc:'오락실 단골 업적 기념 트로피입니다.',badge:'업적',type:'deco',env:50,onPlace(){S.envScore+=this.env;toast('🕹️ 트로피를 세웠습니다!','success');}},
   {id:'lux_fountain',name:'레인보우 정원 분수',emoji:'⛲',img:'assets/lux_fountain.png',imgScale:'160%',imgOffset:'translate(15px, 30px)',sizeW:4,sizeH:3,cost:{gold:20000},desc:'꽃과 무지개빛 물줄기로 꾸며진 화려한 정원 분수입니다.',badge:'사치품',type:'deco',env:30,onPlace(){S.envScore+=this.env;toast('⛲ 레인보우 정원 분수를 설치했습니다!','success');}},
   {id:'lux_statue',name:'모아이 석상',emoji:'🗿',img:'assets/lux_moai.png',imgScale:'100%',imgOffset:'translate(0%, 0%)',sizeW:2,sizeH:3,cost:{gold:10000},desc:'머나먼 섬에서 공수해온 모아이 석상. 그냥 있어 보이려고 놓는 겁니다.',badge:'사치품',type:'deco',env:40,onPlace(){S.envScore+=this.env;toast('🗿 모아이 석상을 세웠습니다!','success');}},
   {id:'lux_mansion',name:'크리스탈 궁전',emoji:'🏰',img:'assets/lux_crystal_palace.png',imgScale:'115%',imgOffset:'translate(0%, 0%)',sizeW:5,sizeH:5,cost:{gold:20000},desc:'투명한 크리스탈로 지어진 초호화 궁전. 실용성은 0입니다.',badge:'사치품',type:'deco',env:80,onPlace(){S.envScore+=this.env;toast('🏰 크리스탈 궁전을 건설했습니다!','success');}},
@@ -1832,7 +1840,9 @@ const ACHIEVEMENTS = [
   { id: 'ach_frozen', title: '겨울왕국', desc: '가방에 🧊얼음 50개 모으기', rewardGold: 100, trophyId: 't_frozen', trophyName: '꽁꽁 언 눈사람', emoji: '⛄', comment: '농장 창고에 겨울이 왔나요? 엘사도 놀라고 갈 비축량이네요.', max: 50, getVal: () => S.ice||0, check: () => (S.ice||0) >= 50 },
   { id: 'ach_vvip', title: '센터 VVIP 고객', desc: '챌린지 센터 입장 누적 30회', rewardGold: 150, trophyId: 't_vvip', trophyName: '황금 티켓', emoji: '🎫', comment: '농사는 뒷전이고 퀴즈에 중독되셨군요. 센터장님이 VIP로 모신답니다.', max: 30, getVal: () => S.challengeEnters||0, check: () => (S.challengeEnters||0) >= 30 },
   { id: 'ach_destroy', title: '자연의 파괴왕', desc: '건물 10번 폭파(철거) 시키기', rewardGold: 50, trophyId: 't_destroy', trophyName: '위험한 다이너마이트', emoji: '💣', comment: '생태계를 살리러 와놓고 무자비하게 건물을 철거하다니!', max: 10, getVal: () => S.demolishCount||0, check: () => (S.demolishCount||0) >= 10 },
-  { id: 'ach_streak', title: '퀴즈 마스터', desc: '구역 퀴즈를 나가지 않고 100문제 연속 풀이', rewardGold: 300, trophyId: 't_streak', trophyName: '반짝이는 트로피', emoji: '🧠', comment: '틀려도 포기하지 않고 100문제나 내리 풀다니, 그 끈기가 진짜 실력입니다.', max: 100, getVal: () => S.maxQuizStreak||0, check: () => (S.maxQuizStreak||0) >= 100 }
+  { id: 'ach_streak', title: '퀴즈 마스터', desc: '구역 퀴즈를 나가지 않고 100문제 연속 풀이', rewardGold: 300, trophyId: 't_streak', trophyName: '반짝이는 트로피', emoji: '🧠', comment: '틀려도 포기하지 않고 100문제나 내리 풀다니, 그 끈기가 진짜 실력입니다.', max: 100, getVal: () => S.maxQuizStreak||0, check: () => (S.maxQuizStreak||0) >= 100 },
+  { id: 'ach_fertilizer', title: '비료 마스터', desc: '비료(원생생물) 50회 사용', rewardGold: 150, trophyId: 't_fertilizer', trophyName: '황금 비료 포대', emoji: '🦠', comment: '원생생물이 남아나질 않네요. 즉석 재배의 달인이십니다!', max: 50, getVal: () => S.fertilizes||0, check: () => (S.fertilizes||0) >= 50 },
+  { id: 'ach_arcade', title: '오락실 단골', desc: '게임장 미니게임 30회 플레이', rewardGold: 100, trophyId: 't_arcade', trophyName: '빛나는 조이스틱', emoji: '🕹️', comment: '농사는 잠시 잊으셨나요? 게임장 사장님이 당신을 단골 명단 1순위로 올려드렸습니다.', max: 30, getVal: () => S.arcadeGamesPlayed||0, check: () => (S.arcadeGamesPlayed||0) >= 30 }
 ];
 
 function checkAchievements() {
@@ -2412,7 +2422,7 @@ function updateQuestUI() {
   document.getElementById('quest-fill').style.width = q.pct() + '%';
   document.getElementById('btn-quest-deliver').style.display = 'inline-block';
 
-  if(S.lastAnnouncedQuest !== qs && !suppressQuestPopup && S.introSeen) {
+  if(S.lastAnnouncedQuest !== qs && !suppressQuestPopup && S.introSeen && !isBlockingModalOpen()) {
     S.lastAnnouncedQuest = qs;
     saveState();
     showQuestPopup(q, qs);
@@ -2482,6 +2492,14 @@ function closeQuestDetail() {
   const btn = document.getElementById('btn-quest-detail');
   if(content) content.style.display = 'none';
   if(btn) btn.innerHTML = '자세히 ▶';
+}
+function isBlockingModalOpen() {
+  const overlays = document.querySelectorAll('.modal-overlay, .modal-bg');
+  for (const el of overlays) {
+    if (el.id === 'quest-popup-modal') continue;
+    if (el.style.display && el.style.display !== 'none') return true;
+  }
+  return false;
 }
 function showQuestPopup(q, qs) {
   if(!q) return;
@@ -2688,6 +2706,11 @@ function updateUI(){
   const shopBuyContainer = document.getElementById('shop-buy-container');
   if(shopBuyContainer) shopBuyContainer.style.display = S.unlockedFarm ? '' : 'none';
 
+  document.querySelectorAll('#gs-grid-sell .sell-owned').forEach(el => {
+    const res = el.getAttribute('data-owned-for');
+    el.textContent = `보유 ${S[res]||0}개`;
+  });
+
   saveState();
   if(typeof checkQuest==='function') checkQuest();
   if(typeof checkAchievements==='function') checkAchievements();
@@ -2834,7 +2857,7 @@ function renderShop(category='all'){
     if(gridSell && gs.sell > 0){
       const sellBtn=document.createElement('button');sellBtn.className='gs-btn sell-btn';
       sellBtn.style.background = 'rgba(59, 130, 246, 0.4)'; sellBtn.style.borderColor = '#2563eb';
-      sellBtn.innerHTML= `<span class="sell-emoji">${gs.emoji}</span><span class="sell-info">${gs.name}<span>🪙 +${gs.sell}G</span></span>`;
+      sellBtn.innerHTML= `<span class="sell-emoji">${gs.emoji}</span><span class="sell-info">${gs.name} <span class="sell-owned" data-owned-for="${gs.res}">보유 ${S[gs.res]||0}개</span><span>🪙 +${gs.sell}G</span></span>`;
       sellBtn.onclick=()=>openShopModal('sell', gs);
       gridSell.appendChild(sellBtn);
     }
@@ -3035,9 +3058,32 @@ function openCraftPopup(b) {
     : item.desc;
   document.getElementById('craft-qty').value = 1;
   updateCraftReqDisp();
+  updateCraftTimerDisp();
+  if(craftPopupTimerInterval) clearInterval(craftPopupTimerInterval);
+  craftPopupTimerInterval = setInterval(updateCraftTimerDisp, 1000);
   document.getElementById('btn-do-craft').onclick = () => startCraft(b);
   document.getElementById('craft-popup').style.display = 'flex';
   } catch(e) { toast('CraftPopup 에러: ' + e.message, 'error'); }
+}
+let craftPopupTimerInterval = null;
+function updateCraftTimerDisp() {
+  const b = currentCraftBuilding;
+  const box = document.getElementById('craft-timer-box');
+  if(!b || !(b.craftQueue > 0)) {
+    if(craftPopupTimerInterval) { clearInterval(craftPopupTimerInterval); craftPopupTimerInterval = null; }
+    if(box) box.style.display = 'none';
+    return;
+  }
+  const r = CRAFT_RECIPES[b.id];
+  const timePerItem = r.time * 1000;
+  const elapsed = Date.now() - b.craftStart;
+  const remainMs = Math.max(0, (b.craftQueue * timePerItem) - elapsed);
+  box.style.display = 'block';
+  document.getElementById('craft-timer-val').textContent = Math.ceil(remainMs / 1000);
+}
+function closeCraftPopup() {
+  document.getElementById('craft-popup').style.display = 'none';
+  if(craftPopupTimerInterval) { clearInterval(craftPopupTimerInterval); craftPopupTimerInterval = null; }
 }
 function startCraft(b) {
   const r = CRAFT_RECIPES[b.id];
@@ -3059,6 +3105,8 @@ function startCraft(b) {
   
   toast(qty+'개 가동이 시작되었습니다!', 'success');
   saveState(); updateUI(); renderBuildings(); updateCraftReqDisp();
+  updateCraftTimerDisp();
+  if(!craftPopupTimerInterval) craftPopupTimerInterval = setInterval(updateCraftTimerDisp, 1000);
 }
 function harvestCraft(b, e) {
   e.preventDefault(); e.stopPropagation();
@@ -3832,10 +3880,13 @@ function nextChalQuestion() {
 function checkChalQuiz(){
   const input = document.getElementById('chal-quiz-input');
   const ans = input.value;
-  document.getElementById('chal-quiz-modal').style.display='none';
-  
-  if(ans.trim()==='') { toast('입력값이 없어 취소되었습니다. (도전 종료)','warning'); return; }
-  
+
+  if(ans.trim()===''){
+    document.getElementById('chal-quiz-modal').style.display='none';
+    toast('입력값이 없어 취소되었습니다. (도전 종료)','warning');
+    return;
+  }
+
   if(ans.replace(/\s+/g,'') === currentChalAnswer.replace(/\s+/g,'')){
     chalStreak++;
     sndCorrect();
@@ -3844,14 +3895,25 @@ function checkChalQuiz(){
     const amt = Math.random() < 0.2 ? 2 : 1;
     S[drop] += amt;
     toast(`🎉 정답! ${EMOJIS[drop]} ${amt}개 획득! (${chalStreak}/5)`, 'success');
-    
+
     if(chalStreak >= 5) {
+      document.getElementById('chal-quiz-modal').style.display='none';
       S.gold += 50;
-      toast('🏆 5연속 정답! 보너스 50G 획득!', 'success');
+      celebrateChapter('🏆 5문제 전부 정답!', '참가비 50G를 그대로 돌려받았습니다!');
     } else {
-      setTimeout(nextChalQuestion, 1500);
+      // 모달을 닫지 않고 그 자리에서 짧게 정답 표시 후 다음 문제로 전환 (화면이 꺼졌다 켜지는 것처럼 보이지 않도록)
+      const qEl = document.getElementById('chal-quiz-question');
+      input.disabled = true;
+      qEl.style.color = '#22c55e';
+      qEl.textContent = '✅ 정답입니다!';
+      setTimeout(() => {
+        input.disabled = false;
+        qEl.style.color = '';
+        nextChalQuestion();
+      }, 600);
     }
   } else {
+    document.getElementById('chal-quiz-modal').style.display='none';
     sndWrong();
     if(chalStreak === 0) {
       S.challengeFailQ1 = (S.challengeFailQ1||0) + 1;
@@ -3889,9 +3951,8 @@ function showSurpriseQuiz(){
       S.weedQuizCorrect = (S.weedQuizCorrect||0) + 1;
       const isSeed = Math.random() < 0.5;
       if(isSeed) {
-        const amt = Math.floor(Math.random()*3)+1;
-        S.seed = (S.seed||0)+amt;
-        toast('🌱 정답! 씨앗 '+amt+'개 획득!','success');
+        S.seed = (S.seed||0)+1;
+        toast('🌱 정답! 씨앗 1개 획득!','success');
       } else {
         const amt = Math.floor(Math.random()*11)+5;
         S.gold += amt;
@@ -4226,10 +4287,15 @@ mapWrapper.addEventListener('touchmove',e=>{
   }
   if(!buildModeItem || buildModeItem.type === 'path') e.preventDefault();
 },{passive:false});
-mapWrapper.addEventListener('touchend',e=>{ 
+mapWrapper.addEventListener('touchend',e=>{
   if(buildModeItem && ghostEl && e.changedTouches.length===1 && buildModeItem.type !== 'path'){ tryBuildAt(e.changedTouches[0].clientX, e.changedTouches[0].clientY); return; }
-  if(e.touches.length<2) isPanning=false; 
+  if(e.touches.length<2) isPanning=false;
 });
+// 건물 클릭 시 팝업을 여는 핸들러가 touchend에서 stopPropagation()을 호출하면 위 리스너(버블 단계)가
+// 실행되지 않아 isPanning이 true로 남는다. 이후 팝업 안 다른 위치를 클릭하면 그 잔여 좌표 기준으로
+// 지도가 드래그된 것처럼 튀는 버그가 생기므로, 캡처 단계에서 별도로 확실히 리셋한다.
+window.addEventListener('touchend', e => { if(e.touches.length<2) isPanning=false; }, {capture:true});
+window.addEventListener('touchcancel', e => { if(e.touches.length<2) isPanning=false; }, {capture:true});
 
 let editMode=false;
 function toggleEditMode(){
@@ -4240,6 +4306,7 @@ function toggleEditMode(){
     btn.style.background='var(--gold)'; btn.style.color='#000'; btn.style.borderColor='var(--gold)';
     map.classList.add('show-grid');
     invPanel.style.display='flex';
+    document.getElementById('edit-mode-hint').style.display='block';
     renderEditInventory();
     toast('🛠️ 편집 모드: 건물 회수/이동 및 보관함 이용 가능','success',4000);
   } else {
@@ -4247,6 +4314,7 @@ function toggleEditMode(){
     btn.style.background='rgba(45,35,25,0.92)'; btn.style.color='var(--text)'; btn.style.borderColor='var(--border)';
     map.classList.remove('show-grid');
     invPanel.style.display='none';
+    document.getElementById('edit-mode-hint').style.display='none';
     if(buildModeItem) cancelBuild();
     toast('편집 종료', 'success', 1500);
   }
@@ -4481,7 +4549,7 @@ function setHarvestIcon(div, emoji, count, onHarvest, showBadge=true) {
   el.ontouchstart = onHarvest;
   div.appendChild(el);
 }
-function setProgressBar(div, pct, color, remainMsForAnim) {
+function setProgressBar(div, pct, color) {
   const existing = div.querySelector('.progress-bar-bg');
   if (existing) existing.remove();
   if (pct === null || pct === undefined) {
@@ -4493,18 +4561,9 @@ function setProgressBar(div, pct, color, remainMsForAnim) {
   barBg.className = 'progress-bar-bg';
   barBg.style.cssText = 'position:absolute;bottom:5px;left:10%;width:80%;height:6px;background:rgba(0,0,0,0.5);border-radius:4px;overflow:hidden;';
   const barFill = document.createElement('div');
-  if (remainMsForAnim === undefined) {
-    barFill.style.cssText = 'height:100%;background:'+color+';width:0%;transition:width 1s linear;';
-    barBg.appendChild(barFill); div.appendChild(barBg);
-    barFill.style.width = pct + '%';
-  } else {
-    barFill.style.cssText = 'height:100%;background:'+color+';width:'+pct+'%;';
-    barBg.appendChild(barFill); div.appendChild(barBg);
-    requestAnimationFrame(() => {
-      barFill.style.transition = 'width '+remainMsForAnim+'ms linear';
-      barFill.style.width = '100%';
-    });
-  }
+  barFill.style.cssText = 'height:100%;background:'+color+';width:0%;transition:width 1s linear;';
+  barBg.appendChild(barFill); div.appendChild(barBg);
+  barFill.style.width = pct + '%';
 }
 
 function tickTree(b, item) {
@@ -4587,7 +4646,7 @@ function tickCraft(b, item) {
     const timePerItem = r.time * 1000;
     const elapsed = Date.now() - b.craftStart;
     const pct = Math.max(0, Math.min(100, (elapsed / timePerItem) * 100));
-    setProgressBar(div, pct, 'var(--primary)', Math.max(0, timePerItem - elapsed));
+    setProgressBar(div, pct, 'var(--primary)');
     if (!b.craftTimerSet) {
       b.craftTimerSet = true;
       setTimeout(() => { b.craftTimerSet = false; tickCraft(b, item); }, 1000);
@@ -5202,6 +5261,7 @@ function startGame(){
   saveState();
   updateUI();
   document.getElementById('intro-modal').style.display='none';
+  if(typeof checkQuest==='function') checkQuest();
 }
 
 initMapPosition();
